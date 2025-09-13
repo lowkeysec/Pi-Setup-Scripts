@@ -48,7 +48,7 @@ fi
 
 ### --- Wait for ZeroTier interface ---
 echo "⏳ Waiting for ZeroTier interface to appear..."
-MAX_WAIT=20
+MAX_WAIT=5
 WAITED=0
 while ! ip link show | grep -q '^zt'; do
     sleep 1
