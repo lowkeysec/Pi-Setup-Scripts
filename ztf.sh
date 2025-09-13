@@ -5,10 +5,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-### --- System Update ---
-echo "🔄 Updating system..."
-sudo apt-get update -y && sudo apt-get upgrade -y
-
 ### --- ZeroTier Installation ---
 echo "🌐 Installing ZeroTier..."
 
