@@ -46,27 +46,6 @@ else
     echo "✅ Already joined ZeroTier network $NETWORK_ID"
 fi
 
-### --- Wait for ZeroTier interface ---
-echo "⏳ Waiting for ZeroTier interface to appear..."
-MAX_WAIT=5
-WAITED=0
-while ! ip link show | grep -q '^zt'; do
-    sleep 1
-    WAITED=$((WAITED+1))
-    if [ "$WAITED" -ge "$MAX_WAIT" ]; then
-        echo "⚠️ ZeroTier interface did not appear after $MAX_WAIT seconds. Continuing..."
-        break
-    fi
-done
-
-ZT_IFS=$(ip -o link show | awk -F': ' '{print $2}' | grep '^zt' || true)
-if [[ -n "$ZT_IFS" ]]; then
-    echo "✅ ZeroTier interfaces detected:"
-    echo "$ZT_IFS"
-else
-    echo "⚠️ No ZeroTier interfaces detected. nftables will still be configured."
-fi
-
 ### --- nftables Installation ---
 echo "🛡 Installing nftables..."
 sudo apt-get install -y nftables
