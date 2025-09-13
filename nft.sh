@@ -1,17 +1,48 @@
 #!/bin/bash
-# Idempotent nftables + IPv4 forwarding setup for Raspberry Pi with ZeroTier
-# Includes sanity checks
+# Raspberry Pi ZeroTier + nftables setup script
+# Idempotent and safe to re-run
 
 set -euo pipefail
 IFS=$'\n\t'
 
-echo "🔄 Updating package list..."
-sudo apt update -y
+### --- System Update ---
+echo "🔄 Updating system..."
+sudo apt-get update -y && sudo apt-get upgrade -y
 
-echo "📦 Installing nftables..."
-sudo apt install -y nftables
+### --- ZeroTier Installation ---
+echo "🌐 Installing ZeroTier..."
 
-# Wi-Fi interface (change if your Pi uses something else like wlan1)
+# Add ZeroTier GPG key
+if [ ! -f /usr/share/keyrings/zerotierone-archive-keyring.gpg ]; then
+  curl -fsSL https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg \
+    | gpg --dearmor \
+    | sudo tee /usr/share/keyrings/zerotierone-archive-keyring.gpg >/dev/null
+fi
+
+# Add ZeroTier repo if missing
+RELEASE=$(lsb_release -cs)
+if [ ! -f /etc/apt/sources.list.d/zerotier.list ]; then
+  echo "deb [signed-by=/usr/share/keyrings/zerotierone-archive-keyring.gpg] http://download.zerotier.com/debian/$RELEASE $RELEASE main" \
+    | sudo tee /etc/apt/sources.list.d/zerotier.list
+fi
+
+sudo apt-get update -y
+sudo apt-get install -y zerotier-one
+
+# Join ZeroTier network (replace ID if needed)
+NETWORK_ID="45b6e887e2ef8449"
+if ! sudo zerotier-cli listnetworks | grep -q "$NETWORK_ID"; then
+  echo "🔗 Joining ZeroTier network $NETWORK_ID..."
+  sudo zerotier-cli join "$NETWORK_ID" || true
+else
+  echo "✅ Already joined ZeroTier network $NETWORK_ID"
+fi
+
+### --- nftables Installation ---
+echo "🛡 Installing nftables..."
+sudo apt-get install -y nftables
+
+# Wi-Fi interface (adjust if your Pi uses wlan1, etc.)
 WIFI_IF="wlan0"
 
 echo "📝 Writing nftables rules to /etc/nftables.conf..."
@@ -61,34 +92,33 @@ sudo nft -f /etc/nftables.conf
 echo "📋 Active nftables ruleset:"
 sudo nft list ruleset
 
-echo "🔐 Enabling and starting nftables service..."
+echo "🔐 Enabling nftables service..."
 sudo systemctl enable nftables --now
 
+### --- Enable IPv4 Forwarding ---
 echo "🌍 Enabling IPv4 forwarding..."
-# Ensure the setting exists in sysctl.conf (uncomment or add)
 if grep -q "^[#]*\s*net.ipv4.ip_forward" /etc/sysctl.conf; then
     sudo sed -i 's|^[#]*\s*net.ipv4.ip_forward.*|net.ipv4.ip_forward=1|' /etc/sysctl.conf
 else
     echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
 fi
 
-# Apply changes immediately
 sudo sysctl -p
 
-# ✅ Sanity checks
-echo "🔎 Sanity checks:"
+### --- Sanity Checks ---
+echo "🔎 Running sanity checks..."
 
-# Check IPv4 forwarding status
+# IPv4 forwarding status
 IP_FORWARD=$(sysctl -n net.ipv4.ip_forward)
 echo "IPv4 forwarding is set to: $IP_FORWARD"
 
-# List ZeroTier interfaces
-echo "Detected ZeroTier interfaces:"
-ip -o link show | awk -F': ' '{print $2}' | grep '^zt' || echo "No ZeroTier interfaces detected"
+# ZeroTier interfaces
+ZT_IFS=$(ip -o link show | awk -F': ' '{print $2}' | grep '^zt' || true)
+if [[ -n "$ZT_IFS" ]]; then
+    echo "Detected ZeroTier interfaces:"
+    echo "$ZT_IFS"
+else
+    echo "⚠️ No ZeroTier interfaces detected yet. (ZeroTier may still be starting)"
+fi
 
-# Optional: ping a ZeroTier network peer if known
-# Uncomment and replace <peer_ip> with a reachable IP
-# echo "Testing connectivity to ZeroTier peer <peer_ip>..."
-# ping -c 3 <peer_ip>
-
-echo "✅ nftables installation, configuration, and sanity checks complete."
+echo "✅ Setup complete: ZeroTier + nftables are installed and configured."
