@@ -1,9 +1,22 @@
 #!/bin/bash
 # Raspberry Pi ZeroTier + nftables setup script
 # Idempotent and safe to re-run
+# Usage: ./setup.sh [ZEROTIER_NETWORK_ID]
 
 set -euo pipefail
 IFS=$'\n\t'
+
+### --- ZeroTier Network ID ---
+NETWORK_ID="${1:-}"
+
+if [[ -z "$NETWORK_ID" ]]; then
+    read -rp "Enter ZeroTier network ID to join: " NETWORK_ID
+fi
+
+if [[ -z "$NETWORK_ID" ]]; then
+    echo "❌ No network ID provided. Exiting."
+    exit 1
+fi
 
 ### --- ZeroTier Installation ---
 echo "🌐 Installing ZeroTier..."
@@ -25,13 +38,33 @@ fi
 sudo apt-get update -y
 sudo apt-get install -y zerotier-one
 
-# Join ZeroTier network (replace ID if needed)
-NETWORK_ID="45b6e887e2ef8449"
+### --- Join ZeroTier Network ---
 if ! sudo zerotier-cli listnetworks | grep -q "$NETWORK_ID"; then
-  echo "🔗 Joining ZeroTier network $NETWORK_ID..."
-  sudo zerotier-cli join "$NETWORK_ID" || true
+    echo "🔗 Joining ZeroTier network $NETWORK_ID..."
+    sudo zerotier-cli join "$NETWORK_ID" || true
 else
-  echo "✅ Already joined ZeroTier network $NETWORK_ID"
+    echo "✅ Already joined ZeroTier network $NETWORK_ID"
+fi
+
+### --- Wait for ZeroTier interface ---
+echo "⏳ Waiting for ZeroTier interface to appear..."
+MAX_WAIT=20
+WAITED=0
+while ! ip link show | grep -q '^zt'; do
+    sleep 1
+    WAITED=$((WAITED+1))
+    if [ "$WAITED" -ge "$MAX_WAIT" ]; then
+        echo "⚠️ ZeroTier interface did not appear after $MAX_WAIT seconds. Continuing..."
+        break
+    fi
+done
+
+ZT_IFS=$(ip -o link show | awk -F': ' '{print $2}' | grep '^zt' || true)
+if [[ -n "$ZT_IFS" ]]; then
+    echo "✅ ZeroTier interfaces detected:"
+    echo "$ZT_IFS"
+else
+    echo "⚠️ No ZeroTier interfaces detected. nftables will still be configured."
 fi
 
 ### --- nftables Installation ---
