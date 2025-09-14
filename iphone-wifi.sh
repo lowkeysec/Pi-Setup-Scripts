@@ -1,7 +1,4 @@
 #!/bin/bash
-# Setup WiFi connection with NetworkManager
-# Usage:
-#   curl -sSL https://raw.githubusercontent.com/<user>/<repo>/main/iphone.sh | sudo bash -s "SSID" "PASSWORD"
 
 set -e
 
