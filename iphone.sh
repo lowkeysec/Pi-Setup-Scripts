@@ -48,4 +48,4 @@ echo "➡️ You can now connect with: nmcli connection up iphone_wifi"
 
 # Set proconfig wifi prioroty
 sudo nmcli connection modify "preconfigured" connection.autoconnect-priority 1
-echo "Preconfig Wifi set to lowest priority."
+echo "The preconfigured wifi is now set to priority 1."
