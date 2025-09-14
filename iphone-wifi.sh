@@ -15,7 +15,7 @@ CONFIG_PATH="/etc/NetworkManager/system-connections/${SSID}.nmconnection"
 echo "📡 Setting up NetworkManager WiFi connection for SSID: $SSID"
 
 # Generate a UUID
-UUID=$(uuid)
+UUID=$(uuid1)
 
 # Create the nmconnection file
 sudo tee "$CONFIG_PATH" > /dev/null <<EOF
