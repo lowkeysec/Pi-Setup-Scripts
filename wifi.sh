@@ -1,4 +1,5 @@
 #!/bin/bash
+# curl -sSL https://raw.githubusercontent.com/lowkeysec/Pi-Setup-Scripts/refs/heads/main/wifi.sh | sudo bash -s "ssidssid" "passpass"
 
 set -e
 
