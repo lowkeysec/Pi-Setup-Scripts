@@ -2,6 +2,7 @@
 # Raspberry Pi ZeroTier + nftables setup script
 # Idempotent and safe to re-run
 # Usage: ./setup.sh [ZEROTIER_NETWORK_ID]
+# curl -sSL https://raw.githubusercontent.com/lowkeysec/Pi-Setup-Scripts/refs/heads/main/zerotier-nft.sh | sudo bash -s zerozerozero
 
 set -euo pipefail
 IFS=$'\n\t'
