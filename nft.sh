@@ -1,7 +1,7 @@
 #!/bin/bash
 # Raspberry Pi nftables setup script
 # Idempotent and safe to re-run
-# suudo curl -sSL https://raw.githubusercontent.com/lowkeysec/Pi-Setup-Scripts/refs/heads/main/nft.sh
+# curl -sSL https://raw.githubusercontent.com/lowkeysec/Pi-Setup-Scripts/refs/heads/main/nft.sh | sudo bash
 
 set -euo pipefail
 IFS=$'\n\t'
